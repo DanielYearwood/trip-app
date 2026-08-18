@@ -6,6 +6,8 @@ import AppShell from '@/components/layout/AppShell.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTripStore } from '@/stores/trip'
 import { useExpensesStore } from '@/stores/expenses'
+import { useCommentsStore } from '@/stores/comments'
+import { useChecklistsStore } from '@/stores/checklists'
 import { supabaseConfigured } from '@/lib/supabase'
 
 const route = useRoute()
@@ -14,10 +16,14 @@ const tripStore = useTripStore()
 const { isLoggedIn } = storeToRefs(auth)
 
 const expenses = useExpensesStore()
+const comments = useCommentsStore()
+const checklists = useChecklistsStore()
 
 async function loadAll() {
   await tripStore.load()
-  if (tripStore.trip) await expenses.load(tripStore.trip.id)
+  if (!tripStore.trip) return
+  const id = tripStore.trip.id
+  await Promise.all([expenses.load(id), comments.load(id), checklists.load(id)])
 }
 
 onMounted(async () => {

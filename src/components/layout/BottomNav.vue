@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, useRoute } from 'vue-router'
-import { Home, Map, Bed, Route, Wallet } from 'lucide-vue-next'
+import { Home, Map, Bed, Route, Wallet, ListChecks } from 'lucide-vue-next'
 
 const route = useRoute()
 
@@ -10,6 +10,7 @@ const items = [
   { to: '/stays', label: 'Hoteles', icon: Bed },
   { to: '/routes', label: 'Rutas', icon: Route },
   { to: '/budget', label: 'Dinero', icon: Wallet },
+  { to: '/checklists', label: 'Tareas', icon: ListChecks },
 ]
 
 const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
@@ -21,7 +22,7 @@ const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.s
     style="padding-bottom: env(safe-area-inset-bottom)"
     aria-label="Navegación principal"
   >
-    <ul class="mx-auto max-w-5xl grid grid-cols-5">
+    <ul class="mx-auto max-w-5xl grid grid-cols-6">
       <li v-for="item in items" :key="item.to">
         <RouterLink
           :to="item.to"

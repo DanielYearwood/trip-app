@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ExternalLink, Star, Waves, Coffee, Pencil } from 'lucide-vue-next'
+import { Star, Waves, Coffee, ChevronRight } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
 import { formatMoney, perNight } from '@/lib/money'
 import { formatRange } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
-import PlaceEditSheet from '@/components/places/PlaceEditSheet.vue'
+import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
 import type { Place, PlaceStatus } from '@/types/domain'
 
 const tripStore = useTripStore()
@@ -14,7 +14,7 @@ const { zones, stays } = storeToRefs(tripStore)
 
 const showDiscarded = ref(false)
 const zoneFilter = ref<string | 'all'>('all')
-const editing = ref<Place | null>(null)
+const detail = ref<Place | null>(null)
 
 // Orden de decisión: primero lo cerrado, luego lo que aún se está valorando.
 const RANK: Record<PlaceStatus, number> = {
@@ -124,16 +124,7 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
             </ul>
           </details>
 
-          <div class="mt-3 flex flex-wrap gap-2">
-            <a
-              v-if="s.booking_url"
-              :href="s.booking_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="tap inline-flex items-center gap-1 rounded border border-line px-2 text-sm"
-            >
-              <ExternalLink :size="14" /> Booking
-            </a>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
             <select
               :value="s.status"
               class="tap rounded border border-line bg-surface px-2 text-sm"
@@ -148,17 +139,17 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
               <option value="descartado">Descartado</option>
             </select>
             <button
-              class="tap inline-flex items-center gap-1 rounded border border-line px-2 text-sm"
-              @click="editing = s"
+              class="tap ml-auto inline-flex items-center gap-1 rounded border border-line px-3 text-sm"
+              @click="detail = s"
             >
-              <Pencil :size="14" /> Editar
+              Ver ficha <ChevronRight :size="14" />
             </button>
           </div>
         </li>
       </ul>
     </section>
 
-    <PlaceEditSheet v-if="editing" :place="editing" @close="editing = null" />
+    <PlaceDetailSheet v-if="detail" :place="detail" @close="detail = null" />
 
     <p v-if="!grouped.length" class="card p-6 text-center text-sm text-muted">
       No hay alojamientos que cumplan el filtro.

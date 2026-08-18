@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/places', name: 'places', component: () => import('@/views/PlacesView.vue') },
     { path: '/routes', name: 'routes', component: () => import('@/views/RoutesView.vue') },
     { path: '/budget', name: 'budget', component: () => import('@/views/BudgetView.vue') },
+    { path: '/checklists', name: 'checklists', component: () => import('@/views/ChecklistsView.vue') },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue'), meta: { public: true } },
   ],
   scrollBehavior: (_to, _from, saved) => saved ?? { top: 0 },

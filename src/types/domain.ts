@@ -126,6 +126,7 @@ export interface Place {
   address: string | null
   lat: number | null
   lng: number | null
+  geocode_source: string | null
   price_amount: number | null
   price_currency: string | null
   price_basis: 'total' | 'por_noche' | 'por_persona' | 'por_grupo' | null

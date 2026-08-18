@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import { AlertTriangle, Info, TriangleAlert } from 'lucide-vue-next'
@@ -7,6 +7,8 @@ import { useTripStore } from '@/stores/trip'
 import { formatRange, daysUntil, nightsBetween } from '@/lib/dates'
 import { formatMoney, perNight } from '@/lib/money'
 import StatusBadge from '@/components/places/StatusBadge.vue'
+import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
+import type { Place } from '@/types/domain'
 
 const tripStore = useTripStore()
 const { trip, zones, alerts, chosenStayByZone, decidedAccommodationTotal, nightsCovered } =
@@ -24,6 +26,8 @@ const countdown = computed(() => {
 const totalNights = computed(() =>
   zones.value.reduce((acc, z) => acc + (nightsBetween(z.start_date, z.end_date) ?? 0), 0),
 )
+
+const detail = ref<Place | null>(null)
 
 const icon = { danger: TriangleAlert, warn: AlertTriangle, info: Info }
 const alertClass = {
@@ -66,7 +70,16 @@ const alertClass = {
     <section>
       <h2 class="mb-2 font-semibold">Dónde dormimos</h2>
       <div class="space-y-3">
-        <article v-for="z in zones" :key="z.id" class="card p-4">
+        <article
+          v-for="z in zones"
+          :key="z.id"
+          class="card p-4"
+          :class="chosenStayByZone[z.id] ? 'cursor-pointer hover:border-primary/50' : ''"
+          :role="chosenStayByZone[z.id] ? 'button' : undefined"
+          :tabindex="chosenStayByZone[z.id] ? 0 : undefined"
+          @click="chosenStayByZone[z.id] && (detail = chosenStayByZone[z.id]!)"
+          @keydown.enter="chosenStayByZone[z.id] && (detail = chosenStayByZone[z.id]!)"
+        >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <p class="font-medium">{{ z.name }}</p>
@@ -92,6 +105,7 @@ const alertClass = {
           <RouterLink v-else to="/stays" class="mt-3 inline-block text-sm text-primary underline">
             Ver candidatos
           </RouterLink>
+          <p v-if="chosenStayByZone[z.id]" class="mt-2 text-xs text-primary">Toca para ver la ficha</p>
         </article>
       </div>
     </section>
@@ -109,11 +123,12 @@ const alertClass = {
     </section>
   </div>
 
-  <div v-else class="card p-6 text-center">
+  <div v-if="!trip" class="card p-6 text-center">
     <p class="font-medium">Todavía no hay ningún viaje</p>
     <p class="mt-1 text-sm text-muted">
-      Ejecuta <code>select public.seed_bali_2026('tu@correo.com');</code> en Supabase para cargar
-      los datos del viaje.
+      Si acabas de entrar y ves esto, pide que te añadan al viaje: sin ser miembro no se ve nada.
     </p>
   </div>
+
+  <PlaceDetailSheet v-if="detail" :place="detail" @close="detail = null" />
 </template>
