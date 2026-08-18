@@ -230,6 +230,22 @@ export const useTripStore = defineStore('trip', () => {
     return true
   }
 
+  /** Actualiza una ruta. Optimista, con vuelta atrás si falla. */
+  async function updateRoute(routeId: string, patch: Partial<TripRoute>) {
+    const idx = routes.value.findIndex((r) => r.id === routeId)
+    if (idx < 0) return false
+    const previous = { ...routes.value[idx]! }
+    Object.assign(routes.value[idx]!, patch)
+
+    const { error: err } = await supabase.from('routes').update(patch).eq('id', routeId)
+    if (err) {
+      routes.value[idx] = previous
+      error.value = errorMessage(err)
+      return false
+    }
+    return true
+  }
+
   async function setStatus(placeId: string, status: PlaceStatus) {
     const place = places.value.find((p) => p.id === placeId)
     if (!place) return
@@ -263,5 +279,6 @@ export const useTripStore = defineStore('trip', () => {
     setStatus,
     updatePlace,
     updateStayDetails,
+    updateRoute,
   }
 })

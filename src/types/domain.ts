@@ -165,6 +165,8 @@ export interface TripRoute {
   cost_amount: number | null
   cost_currency: string | null
   operator: string | null
+  booking_url: string | null
+  booking_reference: string | null
   notes: string | null
 }
 
