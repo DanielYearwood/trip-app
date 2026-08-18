@@ -20,7 +20,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
+  <div class="fixed inset-0 z-[1100] flex items-end sm:items-center sm:justify-center">
     <div class="absolute inset-0 bg-black/40" @click="emit('close')" />
 
     <!-- Hoja inferior en móvil, modal centrado en escritorio -->

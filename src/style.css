@@ -61,6 +61,18 @@
   }
 }
 
+/*
+ * Leaflet reparte z-index altos entre sus paneles (400) y sus controles (1000),
+ * y su contenedor no crea contexto de apilamiento, así que esos valores compiten
+ * con los de la app y el mapa acaba pintándose por encima de las fichas, de la
+ * cabecera y de la barra inferior. Con position + z-index en el contenedor, todo
+ * lo de Leaflet queda encerrado por debajo.
+ */
+.leaflet-container {
+  position: relative;
+  z-index: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
