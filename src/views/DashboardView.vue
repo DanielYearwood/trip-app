@@ -17,8 +17,12 @@ const countdown = computed(() => {
   return daysUntil(trip.value.start_date)
 })
 
+/**
+ * Noches que hay que cubrir = suma de los tramos, no la diferencia entre las
+ * fechas del viaje: el 8 y el 20 de octubre se duerme en el avión.
+ */
 const totalNights = computed(() =>
-  trip.value ? (nightsBetween(trip.value.start_date, trip.value.end_date) ?? 0) : 0,
+  zones.value.reduce((acc, z) => acc + (nightsBetween(z.start_date, z.end_date) ?? 0), 0),
 )
 
 const icon = { danger: TriangleAlert, warn: AlertTriangle, info: Info }
