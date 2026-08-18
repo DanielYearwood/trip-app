@@ -69,8 +69,17 @@ export const useTripStore = defineStore('trip', () => {
     }
 
     for (const z of zones.value) {
-      if (!chosenStayByZone.value[z.id]) {
+      const chosen = chosenStayByZone.value[z.id]
+      if (!chosen) {
         out.push({ level: 'warn', text: `${z.name}: alojamiento sin decidir`, to: '/stays' })
+      } else if (chosen.status === 'seleccionado') {
+        // Decidido no es reservado: hasta que no se reserve, ni el precio ni
+        // la disponibilidad están sujetos a nada.
+        out.push({
+          level: 'warn',
+          text: `${chosen.name}: decidido pero todavía sin reservar`,
+          to: '/stays',
+        })
       }
     }
 
