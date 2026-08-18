@@ -10,3 +10,5 @@ dist/
 !.vscode/extensions.json
 coverage/
 .parts/
+.secrets.local
+*.local.json
