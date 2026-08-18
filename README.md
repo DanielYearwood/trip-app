@@ -1457,6 +1457,18 @@ La app debe generar avisos (no bloqueos) cuando:
 - No introducir SSR/Nuxt: es una SPA privada, no necesita SEO.
 - No meter la `service_role key` en el cliente ni en el repo.
 
+**Requisitos del entorno local:**
+
+- **Node.js 20 LTS o superior.** La máquina de desarrollo tiene hoy **Node 18.12.1**, insuficiente para Vite 6/7 y para las versiones recientes de la cadena de herramientas: hay que actualizar antes de empezar la fase 0. Fijar la versión en `package.json`:
+
+  ```json
+  "engines": { "node": ">=20.19.0" }
+  ```
+
+  y replicarla en `.nvmrc` para que Vercel use exactamente la misma.
+- Configurar la misma versión en Vercel (*Project Settings → Node.js Version*).
+- CLIs necesarias para el despliegue, **no instaladas todavía**: `vercel` y `supabase`. Tampoco hay `gh`.
+
 ### 10.2 Estructura de carpetas
 
 ```
