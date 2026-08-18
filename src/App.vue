@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import AppShell from '@/components/layout/AppShell.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useTripStore } from '@/stores/trip'
+import { useExpensesStore } from '@/stores/expenses'
 import { supabaseConfigured } from '@/lib/supabase'
 
 const route = useRoute()
@@ -12,14 +13,21 @@ const auth = useAuthStore()
 const tripStore = useTripStore()
 const { isLoggedIn } = storeToRefs(auth)
 
+const expenses = useExpensesStore()
+
+async function loadAll() {
+  await tripStore.load()
+  if (tripStore.trip) await expenses.load(tripStore.trip.id)
+}
+
 onMounted(async () => {
   await auth.init()
-  if (auth.isLoggedIn) await tripStore.load()
+  if (auth.isLoggedIn) await loadAll()
 })
 
 // Al iniciar o cerrar sesión, recargamos o vaciamos los datos del viaje.
 watch(isLoggedIn, async (logged) => {
-  if (logged) await tripStore.load()
+  if (logged) await loadAll()
 })
 </script>
 

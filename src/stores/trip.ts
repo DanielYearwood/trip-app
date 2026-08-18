@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase, errorMessage } from '@/lib/supabase'
-import type { Place, Trip, TripRoute, Zone, PlaceStatus } from '@/types/domain'
+import type { Place, Trip, TripRoute, Zone, PlaceStatus, StayDetails } from '@/types/domain'
 import { nightsBetween, overlaps, daysUntil } from '@/lib/dates'
 
 /** Estados que cuentan como "decisión tomada" para un alojamiento. */
@@ -195,6 +195,41 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
+  /** Actualiza campos de un lugar. Optimista, con vuelta atrás si falla. */
+  async function updatePlace(placeId: string, patch: Partial<Place>) {
+    const idx = places.value.findIndex((p) => p.id === placeId)
+    if (idx < 0) return false
+    const previous = { ...places.value[idx]! }
+    Object.assign(places.value[idx]!, patch)
+
+    // stay_details viaja aparte: no es una columna de places.
+    const { stay_details: _ignored, ...columns } = patch
+    const { error: err } = await supabase.from('places').update(columns).eq('id', placeId)
+    if (err) {
+      places.value[idx] = previous
+      error.value = errorMessage(err)
+      return false
+    }
+    return true
+  }
+
+  async function updateStayDetails(placeId: string, patch: Partial<StayDetails>) {
+    const place = places.value.find((p) => p.id === placeId)
+    const previous = place?.stay_details ? { ...place.stay_details } : null
+    if (place?.stay_details) Object.assign(place.stay_details, patch)
+
+    const { error: err } = await supabase
+      .from('stay_details')
+      .update(patch)
+      .eq('place_id', placeId)
+    if (err) {
+      if (place && previous) place.stay_details = previous
+      error.value = errorMessage(err)
+      return false
+    }
+    return true
+  }
+
   async function setStatus(placeId: string, status: PlaceStatus) {
     const place = places.value.find((p) => p.id === placeId)
     if (!place) return
@@ -226,5 +261,7 @@ export const useTripStore = defineStore('trip', () => {
     nightsCovered,
     load,
     setStatus,
+    updatePlace,
+    updateStayDetails,
   }
 })

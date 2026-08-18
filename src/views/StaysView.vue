@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ExternalLink, Star, Waves, Coffee } from 'lucide-vue-next'
+import { ExternalLink, Star, Waves, Coffee, Pencil } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
 import { formatMoney, perNight } from '@/lib/money'
 import { formatRange } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
-import type { PlaceStatus } from '@/types/domain'
+import PlaceEditSheet from '@/components/places/PlaceEditSheet.vue'
+import type { Place, PlaceStatus } from '@/types/domain'
 
 const tripStore = useTripStore()
 const { zones, stays } = storeToRefs(tripStore)
 
 const showDiscarded = ref(false)
 const zoneFilter = ref<string | 'all'>('all')
+const editing = ref<Place | null>(null)
 
 // Orden de decisión: primero lo cerrado, luego lo que aún se está valorando.
 const RANK: Record<PlaceStatus, number> = {
@@ -145,10 +147,18 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
               <option value="reservado">Reservado</option>
               <option value="descartado">Descartado</option>
             </select>
+            <button
+              class="tap inline-flex items-center gap-1 rounded border border-line px-2 text-sm"
+              @click="editing = s"
+            >
+              <Pencil :size="14" /> Editar
+            </button>
           </div>
         </li>
       </ul>
     </section>
+
+    <PlaceEditSheet v-if="editing" :place="editing" @close="editing = null" />
 
     <p v-if="!grouped.length" class="card p-6 text-center text-sm text-muted">
       No hay alojamientos que cumplan el filtro.
