@@ -1,0 +1,10 @@
+# Nunca subir secretos ni entornos locales al build de Vercel.
+.secrets.local
+.env
+.env.local
+.env.*.local
+
+node_modules
+dist
+supabase
+.git

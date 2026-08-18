@@ -12,3 +12,7 @@ coverage/
 .parts/
 .secrets.local
 *.local.json
+
+.vercel
+.env*
+supabase/.temp/
