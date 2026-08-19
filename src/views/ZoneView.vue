@@ -12,6 +12,7 @@ import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
 import ActivitySheet from '@/components/places/ActivitySheet.vue'
 import RouteSheet from '@/components/routes/RouteSheet.vue'
 import CommentThread from '@/components/comments/CommentThread.vue'
+import Cover from '@/components/ui/Cover.vue'
 import { MODE_LABEL, ROUTE_STATUS_LABEL, type Place, type TripRoute } from '@/types/domain'
 
 const route = useRoute()
@@ -64,18 +65,26 @@ function hours(min: number | null | undefined) {
   <div v-if="zone" class="space-y-5">
     <header>
       <RouterLink to="/" class="text-sm text-muted">‹ Volver al viaje</RouterLink>
-      <h1 class="mt-1 text-2xl font-semibold">{{ zone.name }}</h1>
-      <p class="text-sm text-muted">
-        {{ formatRange(zone.start_date, zone.end_date) }} · {{ nights }} noches
-      </p>
-      <p v-if="zone.notes" class="mt-2 rounded bg-line/25 p-2.5 text-sm">{{ zone.notes }}</p>
+
+      <div class="card mt-2 overflow-hidden">
+        <Cover :src="zone.cover_image_url" kind="beach" height="h-40">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div class="absolute bottom-0 left-0 p-5 text-white">
+            <h1 class="text-3xl font-bold leading-none drop-shadow">{{ zone.name }}</h1>
+            <p class="mt-1 text-sm text-white/85 drop-shadow">
+              {{ formatRange(zone.start_date, zone.end_date) }} · {{ nights }} noches
+            </p>
+          </div>
+        </Cover>
+        <p v-if="zone.notes" class="p-4 text-sm text-muted">{{ zone.notes }}</p>
+      </div>
     </header>
 
     <!-- Dónde dormimos -->
     <section>
-      <h2 class="mb-2 font-semibold">Dónde dormimos</h2>
+      <h2 class="section-title mb-3">Dónde dormimos</h2>
 
-      <button v-if="chosen" class="card w-full p-4 text-left hover:border-primary/50" @click="stayDetail = chosen">
+      <button v-if="chosen" class="card-tap w-full p-5 text-left" @click="stayDetail = chosen">
         <div class="flex items-start justify-between gap-3">
           <p class="font-medium">{{ chosen.name }}</p>
           <StatusBadge :status="chosen.status" />
@@ -109,7 +118,7 @@ function hours(min: number | null | undefined) {
 
       <ul v-if="showOptions" class="mt-2 space-y-2">
         <li v-for="s in options" :key="s.id">
-          <button class="card flex w-full items-center gap-3 p-3 text-left hover:border-primary/50" @click="stayDetail = s">
+          <button class="card-tap flex w-full items-center gap-3 p-4 text-left" @click="stayDetail = s">
             <span class="min-w-0 flex-1">
               <span class="block truncate text-sm font-medium">{{ s.name }}</span>
               <span class="block text-xs text-muted">
@@ -125,10 +134,10 @@ function hours(min: number | null | undefined) {
 
     <!-- Cómo llegamos y cómo salimos -->
     <section v-if="arriving.length || leaving.length">
-      <h2 class="mb-2 font-semibold">Cómo llegamos y salimos</h2>
+      <h2 class="section-title mb-3">Cómo llegamos y salimos</h2>
       <ul class="space-y-2">
         <li v-for="r in [...arriving, ...leaving]" :key="r.id">
-          <button class="card w-full p-3 text-left hover:border-primary/50" @click="routeDetail = r">
+          <button class="card-tap w-full p-4 text-left" @click="routeDetail = r">
             <div class="flex items-start justify-between gap-3">
               <span class="min-w-0">
                 <span class="block text-xs text-muted">
@@ -157,7 +166,7 @@ function hours(min: number | null | undefined) {
     <!-- Qué hacemos -->
     <section>
       <div class="mb-2 flex items-center justify-between">
-        <h2 class="font-semibold">Qué hacemos</h2>
+        <h2 class="section-title">Qué hacemos</h2>
         <RouterLink to="/places" class="tap inline-flex items-center gap-1 text-sm text-primary">
           <Plus :size="14" /> Añadir
         </RouterLink>
@@ -165,7 +174,7 @@ function hours(min: number | null | undefined) {
 
       <ul v-if="zoneActivities.length" class="space-y-2">
         <li v-for="a in zoneActivities" :key="a.id">
-          <button class="card w-full p-3 text-left hover:border-primary/50" @click="activityDetail = a">
+          <button class="card-tap w-full p-4 text-left" @click="activityDetail = a">
             <div class="flex items-start justify-between gap-3">
               <p class="text-sm font-medium leading-tight">{{ a.name }}</p>
               <StatusBadge :status="a.status" />

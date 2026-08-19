@@ -6,6 +6,7 @@ import { useTripStore } from '@/stores/trip'
 import { formatMoney, perNight } from '@/lib/money'
 import { formatRange } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
+import Cover from '@/components/ui/Cover.vue'
 import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
 import type { Place, PlaceStatus } from '@/types/domain'
 
@@ -47,7 +48,7 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
 <template>
   <div class="space-y-4">
     <header class="flex flex-wrap items-center gap-2">
-      <h1 class="mr-auto text-lg font-semibold">Alojamientos</h1>
+      <h1 class="mr-auto text-2xl font-bold">Alojamientos</h1>
       <select
         v-model="zoneFilter"
         class="tap rounded border border-line bg-surface px-2 text-sm"
@@ -74,13 +75,19 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
         <li
           v-for="s in g.items"
           :key="s.id"
-          class="card p-4"
+          class="card overflow-hidden"
           :class="s.status === 'descartado' ? 'opacity-50' : ''"
         >
-          <div class="flex items-start justify-between gap-3">
-            <h3 class="font-medium leading-tight">{{ s.name }}</h3>
-            <StatusBadge :status="s.status" />
-          </div>
+          <Cover :src="s.cover_image_url" kind="stay" height="h-32">
+            <span class="absolute right-3 top-3">
+              <StatusBadge :status="s.status" />
+            </span>
+          </Cover>
+
+          <div class="p-4">
+            <h3 class="font-display text-lg font-semibold leading-tight tracking-tightest">
+              {{ s.name }}
+            </h3>
 
           <p class="mt-1 text-sm">
             <span class="font-semibold">
@@ -144,6 +151,7 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
             >
               Ver ficha <ChevronRight :size="14" />
             </button>
+            </div>
           </div>
         </li>
       </ul>

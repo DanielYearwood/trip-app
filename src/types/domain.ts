@@ -95,6 +95,7 @@ export interface Zone {
   center_lng: number | null
   sort_order: number
   notes: string | null
+  cover_image_url: string | null
 }
 
 export interface StayDetails {

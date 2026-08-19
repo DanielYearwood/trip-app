@@ -19,13 +19,21 @@ export default {
       },
       borderRadius: {
         DEFAULT: '14px',
-        card: '16px',
+        card: '20px',
+        xl2: '28px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.06)',
+        card: '0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -6px rgb(0 0 0 / 0.10)',
+        lift: '0 10px 40px -12px rgb(0 0 0 / 0.28)',
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
+        // Display para titulares, sans para todo lo demás. La pareja es lo que
+        // más cambia la sensación de "esto está diseñado".
+        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+        sans: ['"Inter Tight"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.03em',
       },
     },
   },

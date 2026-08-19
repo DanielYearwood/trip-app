@@ -15,7 +15,7 @@ const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.s
 
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-line"
+    class="fixed bottom-0 inset-x-0 z-30 bg-surface/90 backdrop-blur-xl border-t border-line"
     style="padding-bottom: env(safe-area-inset-bottom)"
     aria-label="Navegación principal"
   >

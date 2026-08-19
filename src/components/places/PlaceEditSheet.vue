@@ -22,6 +22,7 @@ const pending = ref(p.price_pending)
 const checkedAt = ref(p.checked_at ?? new Date().toISOString().slice(0, 10))
 const status = ref<PlaceStatus>(p.status)
 const notes = ref(p.notes ?? '')
+const cover = ref(p.cover_image_url ?? '')
 const roomType = ref(d?.room_type ?? '')
 const breakfast = ref(d?.breakfast_included ?? false)
 const freeCancel = ref(d?.free_cancellation ?? false)
@@ -44,6 +45,7 @@ async function save() {
     checked_at: price.value === null ? null : checkedAt.value,
     status: status.value,
     notes: notes.value.trim() || null,
+    cover_image_url: cover.value.trim() || null,
   })
 
   if (isStay.value && d) {
@@ -183,6 +185,20 @@ async function createExpense() {
           />
         </div>
       </template>
+
+      <div>
+        <label class="block text-sm font-medium" :for="`cover-${p.id}`">Foto (URL)</label>
+        <input
+          :id="`cover-${p.id}`"
+          v-model="cover"
+          type="url"
+          placeholder="Pega el enlace de una foto de Booking"
+          class="tap mt-1 w-full rounded border border-line bg-surface px-3"
+        />
+        <p class="mt-1 text-xs text-muted">
+          En Booking: clic derecho sobre la foto y "Copiar dirección de la imagen".
+        </p>
+      </div>
 
       <div>
         <label class="block text-sm font-medium" :for="`notes-${p.id}`">Notas</label>

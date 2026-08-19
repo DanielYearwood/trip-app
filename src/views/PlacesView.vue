@@ -9,6 +9,7 @@ import { supabase, errorMessage } from '@/lib/supabase'
 import { formatMoney } from '@/lib/money'
 import { formatDate } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
+import Cover from '@/components/ui/Cover.vue'
 import ActivitySheet from '@/components/places/ActivitySheet.vue'
 import Sheet from '@/components/ui/Sheet.vue'
 import type { Place } from '@/types/domain'
@@ -99,7 +100,7 @@ async function createActivity() {
 <template>
   <div class="space-y-4">
     <header class="flex flex-wrap items-center gap-2">
-      <h1 class="mr-auto text-lg font-semibold">Planes</h1>
+      <h1 class="mr-auto text-2xl font-bold">Planes</h1>
       <button
         class="tap inline-flex items-center gap-1 rounded bg-primary px-3 text-sm text-white"
         @click="adding = true"
@@ -146,17 +147,21 @@ async function createActivity() {
       <ul class="space-y-2">
         <li v-for="a in g.items" :key="a.id">
           <button
-            class="card w-full p-3 text-left hover:border-primary/50"
+            class="card-tap w-full overflow-hidden text-left"
             :class="a.status === 'descartado' ? 'opacity-50' : ''"
             @click="detail = a"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="font-medium leading-tight">{{ a.name }}</p>
-                <p v-if="a.category" class="text-xs text-muted">{{ a.category }}</p>
-              </div>
-              <StatusBadge :status="a.status" />
-            </div>
+            <Cover :src="a.cover_image_url" kind="activity" height="h-28">
+              <span class="absolute right-3 top-3">
+                <StatusBadge :status="a.status" />
+              </span>
+            </Cover>
+
+            <div class="p-4">
+              <p class="font-display text-base font-semibold leading-tight tracking-tightest">
+                {{ a.name }}
+              </p>
+              <p v-if="a.category" class="text-xs text-muted">{{ a.category }}</p>
 
             <div class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
               <span v-if="hours(a.activity_details?.duration_minutes)" class="chip bg-line/50 text-muted">
@@ -185,6 +190,7 @@ async function createActivity() {
                 · {{ comments.countFor('place', a.id) }} nota(s)
               </span>
             </p>
+            </div>
           </button>
         </li>
       </ul>

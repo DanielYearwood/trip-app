@@ -18,6 +18,7 @@ const d = p.activity_details
 
 const status = ref<PlaceStatus>(p.status)
 const notes = ref(p.notes ?? '')
+const cover = ref(p.cover_image_url ?? '')
 const url = ref(p.website_url ?? '')
 const duration = ref<number | null>(d?.duration_minutes ?? null)
 const pricePerson = ref<number | null>(d?.price_per_person ?? null)
@@ -66,6 +67,7 @@ async function save() {
     status: status.value,
     notes: notes.value.trim() || null,
     website_url: url.value.trim() || null,
+    cover_image_url: cover.value.trim() || null,
   })
   if (d) {
     await tripStore.updateActivityDetails(p.id, {
@@ -221,6 +223,17 @@ function showOnMap() {
             :id="`wb-${p.id}`"
             v-model="whatToBring"
             placeholder="Calzado, bañador, efectivo…"
+            class="tap mt-1 w-full rounded border border-line bg-surface px-2"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium" :for="`cv-${p.id}`">Foto (URL)</label>
+          <input
+            :id="`cv-${p.id}`"
+            v-model="cover"
+            type="url"
+            placeholder="https://…"
             class="tap mt-1 w-full rounded border border-line bg-surface px-2"
           />
         </div>
