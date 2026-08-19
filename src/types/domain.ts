@@ -114,6 +114,21 @@ export interface StayDetails {
   booking_reference: string | null
 }
 
+export interface ActivityDetails {
+  place_id: string
+  duration_minutes: number | null
+  price_per_person: number | null
+  price_group: number | null
+  people: number
+  weather_dependent: boolean
+  booking_required: boolean
+  booking_deadline: string | null
+  provider: string | null
+  booking_reference: string | null
+  effort_level: 'bajo' | 'medio' | 'alto' | null
+  what_to_bring: string | null
+}
+
 export interface Place {
   id: string
   trip_id: string
@@ -148,8 +163,9 @@ export interface Place {
   tags: string[]
   notes: string | null
   updated_at: string
-  /** Presente cuando la consulta hace join con stay_details. */
+  /** Presentes cuando la consulta hace join con las tablas de detalle. */
   stay_details?: StayDetails | null
+  activity_details?: ActivityDetails | null
 }
 
 export interface TripRoute {

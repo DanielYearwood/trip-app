@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { supabase, errorMessage } from '@/lib/supabase'
-import type { Place, Trip, TripRoute, Zone, PlaceStatus, StayDetails } from '@/types/domain'
+import type { Place, Trip, TripRoute, Zone, PlaceStatus, StayDetails, ActivityDetails } from '@/types/domain'
 import { nightsBetween, overlaps, daysUntil } from '@/lib/dates'
 
 /** Estados que cuentan como "decisión tomada" para un alojamiento. */
@@ -168,7 +168,7 @@ export const useTripStore = defineStore('trip', () => {
         supabase.from('zones').select('*').eq('trip_id', tripId).order('sort_order'),
         supabase
           .from('places')
-          .select('*, stay_details(*)')
+          .select('*, stay_details(*), activity_details(*)')
           .eq('trip_id', tripId)
           .is('deleted_at', null)
           .order('name'),
@@ -186,6 +186,9 @@ export const useTripStore = defineStore('trip', () => {
         stay_details: Array.isArray(row.stay_details)
           ? (row.stay_details[0] ?? null)
           : ((row.stay_details as Place['stay_details']) ?? null),
+        activity_details: Array.isArray(row.activity_details)
+          ? (row.activity_details[0] ?? null)
+          : ((row.activity_details as Place['activity_details']) ?? null),
       }))
       routes.value = r.data ?? []
     } catch (e) {
@@ -202,8 +205,8 @@ export const useTripStore = defineStore('trip', () => {
     const previous = { ...places.value[idx]! }
     Object.assign(places.value[idx]!, patch)
 
-    // stay_details viaja aparte: no es una columna de places.
-    const { stay_details: _ignored, ...columns } = patch
+    // Las tablas de detalle viajan aparte: no son columnas de places.
+    const { stay_details: _s, activity_details: _a, ...columns } = patch
     const { error: err } = await supabase.from('places').update(columns).eq('id', placeId)
     if (err) {
       places.value[idx] = previous
@@ -231,6 +234,23 @@ export const useTripStore = defineStore('trip', () => {
   }
 
   /** Actualiza una ruta. Optimista, con vuelta atrás si falla. */
+  async function updateActivityDetails(placeId: string, patch: Partial<ActivityDetails>) {
+    const place = places.value.find((p) => p.id === placeId)
+    const previous = place?.activity_details ? { ...place.activity_details } : null
+    if (place?.activity_details) Object.assign(place.activity_details, patch)
+
+    const { error: err } = await supabase
+      .from('activity_details')
+      .update(patch)
+      .eq('place_id', placeId)
+    if (err) {
+      if (place && previous) place.activity_details = previous
+      error.value = errorMessage(err)
+      return false
+    }
+    return true
+  }
+
   async function updateRoute(routeId: string, patch: Partial<TripRoute>) {
     const idx = routes.value.findIndex((r) => r.id === routeId)
     if (idx < 0) return false
@@ -279,6 +299,7 @@ export const useTripStore = defineStore('trip', () => {
     setStatus,
     updatePlace,
     updateStayDetails,
+    updateActivityDetails,
     updateRoute,
   }
 })
