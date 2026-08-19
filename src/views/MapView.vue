@@ -141,6 +141,17 @@ onMounted(async () => {
 
     render()
 
+    const wantedZone = route.query.zone as string | undefined
+    if (wantedZone) {
+      const z = zones.value.find((x) => x.slug === wantedZone)
+      if (z) {
+        zoneFilter.value = z.id
+        if (z.center_lat && z.center_lng) map.setView([z.center_lat, z.center_lng], 13)
+        router.replace({ path: '/map' })
+        return
+      }
+    }
+
     const wanted = route.query.focus as string | undefined
     const target = wanted ? places.value.find((p) => p.id === wanted) : null
     if (target?.lat != null) {

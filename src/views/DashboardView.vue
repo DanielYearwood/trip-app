@@ -1,40 +1,39 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
-import { AlertTriangle, Info, TriangleAlert } from 'lucide-vue-next'
+import { AlertTriangle, Info, TriangleAlert, ChevronRight, Plane, ListChecks } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
-import { formatRange, daysUntil, nightsBetween } from '@/lib/dates'
-import { formatMoney, perNight } from '@/lib/money'
-import StatusBadge from '@/components/places/StatusBadge.vue'
-import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
-import type { Place } from '@/types/domain'
+import { useExpensesStore } from '@/stores/expenses'
+import { useChecklistsStore } from '@/stores/checklists'
+import { formatRange, formatDate, daysUntil, nightsBetween } from '@/lib/dates'
+import { formatMoney } from '@/lib/money'
 
 const tripStore = useTripStore()
-const { trip, zones, alerts, chosenStayByZone, decidedAccommodationTotal, nightsCovered } =
-  storeToRefs(tripStore)
+const expenses = useExpensesStore()
+const checklists = useChecklistsStore()
+const { trip, zones, places, routes, alerts, chosenStayByZone } = storeToRefs(tripStore)
+const { pagado, previsto } = storeToRefs(expenses)
+const { pendingCount } = storeToRefs(checklists)
 
-const countdown = computed(() => {
-  if (!trip.value) return null
-  return daysUntil(trip.value.start_date)
-})
+const countdown = computed(() => (trip.value ? daysUntil(trip.value.start_date) : null))
 
-/**
- * Noches que hay que cubrir = suma de los tramos, no la diferencia entre las
- * fechas del viaje: el 8 y el 20 de octubre se duerme en el avión.
- */
-const totalNights = computed(() =>
-  zones.value.reduce((acc, z) => acc + (nightsBetween(z.start_date, z.end_date) ?? 0), 0),
+const flights = computed(() =>
+  routes.value.filter((r) => r.mode === 'flight').sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
 )
 
-const detail = ref<Place | null>(null)
+function nightsOf(z: { start_date: string | null; end_date: string | null }) {
+  return nightsBetween(z.start_date, z.end_date) ?? 0
+}
+
+function activityCount(zoneId: string) {
+  return places.value.filter(
+    (p) => p.kind === 'activity' && p.zone_id === zoneId && p.status !== 'descartado',
+  ).length
+}
 
 const icon = { danger: TriangleAlert, warn: AlertTriangle, info: Info }
-const alertClass = {
-  danger: 'text-danger',
-  warn: 'text-warn',
-  info: 'text-muted',
-}
+const alertClass = { danger: 'text-danger', warn: 'text-warn', info: 'text-muted' }
 </script>
 
 <template>
@@ -44,17 +43,15 @@ const alertClass = {
       <p class="text-sm text-muted">
         {{ trip.destination ?? 'Bali' }} · {{ formatRange(trip.start_date, trip.end_date) }}
       </p>
-      <p v-if="countdown !== null && countdown > 0" class="mt-1 text-2xl font-semibold">
+      <p v-if="countdown !== null && countdown > 0" class="mt-1 text-3xl font-semibold">
         Faltan {{ countdown }} días
       </p>
-      <p v-else-if="countdown !== null && countdown <= 0" class="mt-1 text-2xl font-semibold">
-        ¡De viaje!
-      </p>
+      <p v-else class="mt-1 text-3xl font-semibold">¡De viaje!</p>
     </section>
 
-    <!-- Avisos y riesgos -->
+    <!-- Pendiente -->
     <section v-if="alerts.length" class="card p-4">
-      <h2 class="font-semibold">Pendiente de resolver</h2>
+      <h2 class="font-semibold">Pendiente</h2>
       <ul class="mt-2 space-y-2">
         <li v-for="(a, i) in alerts" :key="i" class="flex items-start gap-2 text-sm">
           <component :is="icon[a.level]" :size="16" class="mt-0.5 shrink-0" :class="alertClass[a.level]" />
@@ -66,69 +63,86 @@ const alertClass = {
       </ul>
     </section>
 
-    <!-- Alojamiento por zona -->
+    <!-- Los tres tramos: el corazón de la app -->
     <section>
-      <h2 class="mb-2 font-semibold">Dónde dormimos</h2>
+      <h2 class="mb-2 font-semibold">El viaje</h2>
       <div class="space-y-3">
-        <article
+        <RouterLink
           v-for="z in zones"
           :key="z.id"
-          class="card p-4"
-          :class="chosenStayByZone[z.id] ? 'cursor-pointer hover:border-primary/50' : ''"
-          :role="chosenStayByZone[z.id] ? 'button' : undefined"
-          :tabindex="chosenStayByZone[z.id] ? 0 : undefined"
-          @click="chosenStayByZone[z.id] && (detail = chosenStayByZone[z.id]!)"
-          @keydown.enter="chosenStayByZone[z.id] && (detail = chosenStayByZone[z.id]!)"
+          :to="`/zona/${z.slug}`"
+          class="card block p-4 hover:border-primary/50"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <p class="font-medium">{{ z.name }}</p>
-              <p class="text-xs text-muted">{{ formatRange(z.start_date, z.end_date) }}</p>
+              <p class="text-lg font-semibold">{{ z.name }}</p>
+              <p class="text-xs text-muted">
+                {{ formatRange(z.start_date, z.end_date) }} · {{ nightsOf(z) }} noches
+              </p>
             </div>
-            <StatusBadge v-if="chosenStayByZone[z.id]" :status="chosenStayByZone[z.id]!.status" />
-            <span v-else class="chip bg-warn/15 text-warn">Sin decidir</span>
+            <ChevronRight :size="20" class="mt-1 shrink-0 text-muted" />
           </div>
 
-          <div v-if="chosenStayByZone[z.id]" class="mt-3">
-            <p class="font-medium">{{ chosenStayByZone[z.id]!.name }}</p>
-            <p class="text-sm text-muted">
-              {{ formatMoney(chosenStayByZone[z.id]!.price_amount, chosenStayByZone[z.id]!.price_currency ?? 'EUR') }}
-              <template v-if="perNight(chosenStayByZone[z.id]!.price_amount, chosenStayByZone[z.id]!.stay_details?.nights ?? null)">
-                ·
-                {{ formatMoney(perNight(chosenStayByZone[z.id]!.price_amount, chosenStayByZone[z.id]!.stay_details?.nights ?? null), 'EUR') }}/noche
-              </template>
-              <span v-if="chosenStayByZone[z.id]!.price_pending" class="chip ml-1 bg-warn/15 text-warn">
-                precio por confirmar
-              </span>
-            </p>
-          </div>
-          <RouterLink v-else to="/stays" class="mt-3 inline-block text-sm text-primary underline">
-            Ver candidatos
-          </RouterLink>
-          <p v-if="chosenStayByZone[z.id]" class="mt-2 text-xs text-primary">Toca para ver la ficha</p>
-        </article>
+          <dl class="mt-3 space-y-1 text-sm">
+            <div class="flex justify-between gap-3">
+              <dt class="text-muted">Hotel</dt>
+              <dd v-if="chosenStayByZone[z.id]" class="min-w-0 truncate text-right">
+                {{ chosenStayByZone[z.id]!.name }}
+                <span
+                  class="ml-1 text-xs"
+                  :class="chosenStayByZone[z.id]!.status === 'reservado' ? 'text-ok' : 'text-warn'"
+                >
+                  {{ chosenStayByZone[z.id]!.status === 'reservado' ? '· reservado' : '· sin reservar' }}
+                </span>
+              </dd>
+              <dd v-else class="text-right font-medium text-warn">Sin decidir</dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-muted">Planes</dt>
+              <dd>{{ activityCount(z.id) }}</dd>
+            </div>
+          </dl>
+        </RouterLink>
       </div>
     </section>
 
-    <!-- Resumen económico -->
-    <section class="card p-4">
-      <h2 class="font-semibold">Alojamiento decidido</h2>
-      <p class="mt-1 text-2xl font-semibold">{{ formatMoney(decidedAccommodationTotal) }}</p>
-      <p class="text-sm text-muted">
-        {{ nightsCovered }} de {{ totalNights }} noches cubiertas · para {{ trip.travellers }} personas
-      </p>
-      <p class="mt-2 text-xs text-muted">
-        Solo cuenta lo seleccionado o reservado. No incluye vuelos, traslados, actividades ni comidas.
-      </p>
+    <!-- Vuelos -->
+    <section v-if="flights.length" class="card p-4">
+      <h2 class="flex items-center gap-1.5 font-semibold"><Plane :size="16" /> Vuelos</h2>
+      <ul class="mt-2 space-y-1 text-sm">
+        <li v-for="f in flights" :key="f.id" class="flex justify-between gap-3">
+          <span class="min-w-0 truncate text-muted">{{ f.from_label }} → {{ f.to_label }}</span>
+          <span class="shrink-0">{{ formatDate(f.date, 'd MMM') }}</span>
+        </li>
+      </ul>
     </section>
+
+    <!-- Accesos -->
+    <div class="grid grid-cols-2 gap-3">
+      <RouterLink to="/budget" class="card p-4 hover:border-primary/50">
+        <p class="text-sm text-muted">Pagado</p>
+        <p class="text-xl font-semibold">{{ formatMoney(pagado) }}</p>
+        <p class="text-xs text-muted">de {{ formatMoney(previsto) }} previsto</p>
+      </RouterLink>
+
+      <RouterLink to="/checklists" class="card p-4 hover:border-primary/50">
+        <p class="flex items-center gap-1.5 text-sm text-muted"><ListChecks :size="14" /> Tareas</p>
+        <p class="text-xl font-semibold">{{ pendingCount }}</p>
+        <p class="text-xs text-muted">pendientes</p>
+      </RouterLink>
+    </div>
+
+    <div class="flex flex-wrap gap-2 text-sm">
+      <RouterLink to="/places" class="tap rounded border border-line px-3 text-muted">Todos los planes</RouterLink>
+      <RouterLink to="/stays" class="tap rounded border border-line px-3 text-muted">Todos los hoteles</RouterLink>
+      <RouterLink to="/routes" class="tap rounded border border-line px-3 text-muted">Todos los traslados</RouterLink>
+    </div>
   </div>
 
-  <div v-if="!trip" class="card p-6 text-center">
+  <div v-else class="card p-6 text-center">
     <p class="font-medium">Todavía no hay ningún viaje</p>
     <p class="mt-1 text-sm text-muted">
       Si acabas de entrar y ves esto, pide que te añadan al viaje: sin ser miembro no se ve nada.
     </p>
   </div>
-
-  <PlaceDetailSheet v-if="detail" :place="detail" @close="detail = null" />
 </template>
