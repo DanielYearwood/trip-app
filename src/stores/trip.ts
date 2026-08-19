@@ -168,7 +168,11 @@ export const useTripStore = defineStore('trip', () => {
         supabase.from('zones').select('*').eq('trip_id', tripId).order('sort_order'),
         supabase
           .from('places')
-          .select('*, stay_details(*), activity_details(*)')
+          .select(
+            // activity_details apunta dos veces a places (place_id y
+            // rain_alternative_place_id), así que hay que decir por cuál unir.
+            '*, stay_details(*), activity_details!activity_details_place_id_fkey(*)',
+          )
           .eq('trip_id', tripId)
           .is('deleted_at', null)
           .order('name'),
