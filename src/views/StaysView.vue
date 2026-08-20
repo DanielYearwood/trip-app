@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Star, Waves, Coffee, ChevronRight } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
-import { formatMoney, perNight } from '@/lib/money'
+import { formatMoney, formatWithEur, perNight, toEur } from '@/lib/money'
 import { formatRange } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
 import Cover from '@/components/ui/Cover.vue'
@@ -11,7 +11,7 @@ import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
 import type { Place, PlaceStatus } from '@/types/domain'
 
 const tripStore = useTripStore()
-const { zones, stays } = storeToRefs(tripStore)
+const { zones, stays, fxRate } = storeToRefs(tripStore)
 
 const showDiscarded = ref(false)
 const zoneFilter = ref<string | 'all'>('all')
@@ -91,10 +91,14 @@ const discardedCount = computed(() => stays.value.filter((s) => s.status === 'de
 
           <p class="mt-1 text-sm">
             <span class="font-semibold">
-              {{ formatMoney(s.price_amount, s.price_currency ?? 'EUR') }}
+              {{ formatWithEur(s.price_amount, s.price_currency, fxRate) }}
             </span>
-            <span v-if="perNight(s.price_amount, s.stay_details?.nights ?? null)" class="text-muted">
-              · {{ formatMoney(perNight(s.price_amount, s.stay_details?.nights ?? null)) }}/noche
+            <span
+              v-if="perNight(toEur(s.price_amount, s.price_currency, fxRate), s.stay_details?.nights ?? null)"
+              class="text-muted"
+            >
+              ·
+              {{ formatMoney(perNight(toEur(s.price_amount, s.price_currency, fxRate), s.stay_details?.nights ?? null)) }}/noche
             </span>
           </p>
 

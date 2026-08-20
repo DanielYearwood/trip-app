@@ -4,13 +4,13 @@ import { storeToRefs } from 'pinia'
 import { Check, Plus, Trash2 } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
 import { useExpensesStore } from '@/stores/expenses'
-import { formatMoney, perPerson } from '@/lib/money'
+import { formatMoney, perPerson, toEur } from '@/lib/money'
 import Sheet from '@/components/ui/Sheet.vue'
 import type { ExpenseCategory } from '@/types/domain'
 
 const tripStore = useTripStore()
 const expenses = useExpensesStore()
-const { trip, zones, stays, chosenStayByZone } = storeToRefs(tripStore)
+const { trip, zones, stays, chosenStayByZone, fxRate } = storeToRefs(tripStore)
 const { active, previsto, pagado, pendiente, porCategoria, sinConvertir } = storeToRefs(expenses)
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
@@ -52,13 +52,14 @@ const openZones = computed(() =>
       zone: z,
       options: stays.value
         .filter((s) => s.zone_id === z.id && s.status !== 'descartado' && s.price_amount !== null)
-        .sort((a, b) => (a.price_amount ?? 0) - (b.price_amount ?? 0)),
+        .map((s) => ({ ...s, eur: toEur(s.price_amount, s.price_currency, fxRate.value) ?? 0 }))
+        .sort((a, b) => a.eur - b.eur),
     }))
     .filter((g) => g.options.length),
 )
 
 const cheapestExtra = computed(() =>
-  openZones.value.reduce((acc, g) => acc + (g.options[0]?.price_amount ?? 0), 0),
+  openZones.value.reduce((acc, g) => acc + (g.options[0]?.eur ?? 0), 0),
 )
 
 const porPersona = computed(() => perPerson(previsto.value, trip.value?.travellers ?? 2))
@@ -137,7 +138,12 @@ const porPersona = computed(() => perPerson(previsto.value, trip.value?.travelle
           </div>
 
           <div class="shrink-0 text-right">
-            <p class="text-sm font-semibold tabular-nums">{{ formatMoney(e.amount, e.currency) }}</p>
+            <p class="text-sm font-semibold tabular-nums">
+              {{ formatMoney(e.amount_eur ?? e.amount, 'EUR') }}
+            </p>
+            <p v-if="e.currency !== 'EUR'" class="text-xs text-muted">
+              {{ formatMoney(e.amount, e.currency) }}
+            </p>
             <button
               class="tap text-xs text-muted hover:text-danger"
               :aria-label="`Borrar ${e.label}`"
@@ -169,9 +175,9 @@ const porPersona = computed(() => perPerson(previsto.value, trip.value?.travelle
               {{ o.name }}
             </span>
             <span class="shrink-0 tabular-nums" :class="i === 0 ? 'font-medium' : 'text-muted'">
-              {{ formatMoney(o.price_amount, o.price_currency ?? 'EUR') }}
-              <span v-if="i > 0 && g.options[0]?.price_amount != null" class="text-xs">
-                (+{{ formatMoney((o.price_amount ?? 0) - (g.options[0]!.price_amount ?? 0)) }})
+              {{ formatMoney(o.eur) }}
+              <span v-if="i > 0 && g.options[0]" class="text-xs">
+                (+{{ formatMoney(o.eur - g.options[0]!.eur) }})
               </span>
             </span>
           </li>

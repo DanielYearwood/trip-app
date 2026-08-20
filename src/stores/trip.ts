@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { supabase, errorMessage } from '@/lib/supabase'
 import type { Place, Trip, TripRoute, Zone, PlaceStatus, StayDetails, ActivityDetails } from '@/types/domain'
 import { nightsBetween, overlaps, daysUntil } from '@/lib/dates'
+import { toEur } from '@/lib/money'
 
 /** Estados que cuentan como "decisión tomada" para un alojamiento. */
 const ACTIVE_STAY: PlaceStatus[] = ['seleccionado', 'reservado']
@@ -20,6 +21,9 @@ export const useTripStore = defineStore('trip', () => {
   const routes = ref<TripRoute[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  /** Unidades de moneda local por 1 EUR. Null = todavía no cargado. */
+  const fxRate = ref<number | null>(null)
+  const fxDate = ref<string | null>(null)
 
   const stays = computed(() => places.value.filter((p) => p.kind === 'stay'))
   const activities = computed(() => places.value.filter((p) => p.kind === 'activity'))
@@ -133,11 +137,15 @@ export const useTripStore = defineStore('trip', () => {
     return out
   })
 
-  /** Total de las noches ya decididas. Los candidatos no cuentan. */
+  /**
+   * Total en EUROS de las noches ya decididas. Los candidatos no cuentan.
+   * Convierte: hay alojamientos en rupias y otros en euros, y sumarlos en
+   * bruto daría una cifra absurda.
+   */
   const decidedAccommodationTotal = computed(() =>
     stays.value
-      .filter((s) => ACTIVE_STAY.includes(s.status) && s.price_amount !== null)
-      .reduce((acc, s) => acc + (s.price_amount ?? 0), 0),
+      .filter((s) => ACTIVE_STAY.includes(s.status))
+      .reduce((acc, s) => acc + (toEur(s.price_amount, s.price_currency, fxRate.value) ?? 0), 0),
   )
 
   const nightsCovered = computed(() =>
@@ -164,7 +172,7 @@ export const useTripStore = defineStore('trip', () => {
       if (!trip.value) return
 
       const tripId = trip.value.id
-      const [z, p, r] = await Promise.all([
+      const [z, p, r, fx] = await Promise.all([
         supabase.from('zones').select('*').eq('trip_id', tripId).order('sort_order'),
         supabase
           .from('places')
@@ -177,6 +185,13 @@ export const useTripStore = defineStore('trip', () => {
           .is('deleted_at', null)
           .order('name'),
         supabase.from('routes').select('*').eq('trip_id', tripId).order('date'),
+        supabase
+          .from('fx_rates')
+          .select('rate, as_of')
+          .eq('base', 'EUR')
+          .eq('quote', trip.value.local_currency)
+          .order('as_of', { ascending: false })
+          .limit(1),
       ])
 
       if (z.error) throw z.error
@@ -195,6 +210,8 @@ export const useTripStore = defineStore('trip', () => {
           : ((row.activity_details as Place['activity_details']) ?? null),
       }))
       routes.value = r.data ?? []
+      fxRate.value = fx.data?.[0]?.rate ?? null
+      fxDate.value = fx.data?.[0]?.as_of ?? null
     } catch (e) {
       error.value = errorMessage(e)
     } finally {
@@ -289,6 +306,8 @@ export const useTripStore = defineStore('trip', () => {
     routes,
     loading,
     error,
+    fxRate,
+    fxDate,
     stays,
     activities,
     zoneBySlug,

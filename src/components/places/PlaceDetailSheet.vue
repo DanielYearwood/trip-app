@@ -7,7 +7,7 @@ import StatusBadge from './StatusBadge.vue'
 import PlaceEditSheet from './PlaceEditSheet.vue'
 import CommentThread from '@/components/comments/CommentThread.vue'
 import { useTripStore } from '@/stores/trip'
-import { formatMoney, perNight } from '@/lib/money'
+import { formatMoney, perNight, toEur } from '@/lib/money'
 import { formatRange, formatDate } from '@/lib/dates'
 import { gmapsLink, directionsLink } from '@/lib/maps'
 import { KIND_LABEL, type Place } from '@/types/domain'
@@ -45,9 +45,18 @@ function showOnMap() {
         <p class="text-2xl font-semibold">
           {{ formatMoney(p.price_amount, p.price_currency ?? 'EUR') }}
         </p>
-        <p v-if="perNight(p.price_amount, d?.nights ?? null)" class="text-sm text-muted">
-          {{ formatMoney(perNight(p.price_amount, d?.nights ?? null)) }} por noche ·
-          {{ d?.nights }} noches
+        <p v-if="p.price_currency && p.price_currency !== 'EUR'" class="text-sm font-medium text-primary">
+          ≈ {{ formatMoney(toEur(p.price_amount, p.price_currency, tripStore.fxRate), 'EUR') }}
+          <span v-if="tripStore.fxDate" class="text-xs font-normal text-muted">
+            al cambio del {{ formatDate(tripStore.fxDate, 'd MMM') }}
+          </span>
+        </p>
+        <p
+          v-if="perNight(toEur(p.price_amount, p.price_currency, tripStore.fxRate), d?.nights ?? null)"
+          class="text-sm text-muted"
+        >
+          {{ formatMoney(perNight(toEur(p.price_amount, p.price_currency, tripStore.fxRate), d?.nights ?? null)) }}
+          por noche · {{ d?.nights }} noches
         </p>
         <p class="mt-1 flex flex-wrap gap-1.5 text-xs">
           <span v-if="p.price_pending" class="chip bg-warn/15 text-warn">precio por confirmar</span>

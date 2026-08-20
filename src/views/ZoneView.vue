@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import { ChevronRight, MapPin, CloudRain, Clock, Plus, ArrowRight } from 'lucide-vue-next'
 import { useTripStore } from '@/stores/trip'
 import { useCommentsStore } from '@/stores/comments'
-import { formatMoney, perNight } from '@/lib/money'
+import { formatMoney, formatWithEur, perNight, toEur } from '@/lib/money'
 import { formatRange, formatDate, nightsBetween } from '@/lib/dates'
 import StatusBadge from '@/components/places/StatusBadge.vue'
 import PlaceDetailSheet from '@/components/places/PlaceDetailSheet.vue'
@@ -18,7 +18,7 @@ import { MODE_LABEL, ROUTE_STATUS_LABEL, type Place, type TripRoute } from '@/ty
 const route = useRoute()
 const tripStore = useTripStore()
 const comments = useCommentsStore()
-const { zones, places, routes } = storeToRefs(tripStore)
+const { zones, places, routes, fxRate } = storeToRefs(tripStore)
 
 const stayDetail = ref<Place | null>(null)
 const activityDetail = ref<Place | null>(null)
@@ -90,9 +90,15 @@ function hours(min: number | null | undefined) {
           <StatusBadge :status="chosen.status" />
         </div>
         <p class="mt-1 text-sm">
-          <span class="font-semibold">{{ formatMoney(chosen.price_amount, chosen.price_currency ?? 'EUR') }}</span>
-          <span v-if="perNight(chosen.price_amount, chosen.stay_details?.nights ?? null)" class="text-muted">
-            · {{ formatMoney(perNight(chosen.price_amount, chosen.stay_details?.nights ?? null), chosen.price_currency ?? 'EUR') }}/noche
+          <span class="font-semibold">
+            {{ formatWithEur(chosen.price_amount, chosen.price_currency, fxRate) }}
+          </span>
+          <span
+            v-if="perNight(toEur(chosen.price_amount, chosen.price_currency, fxRate), chosen.stay_details?.nights ?? null)"
+            class="text-muted"
+          >
+            ·
+            {{ formatMoney(perNight(toEur(chosen.price_amount, chosen.price_currency, fxRate), chosen.stay_details?.nights ?? null)) }}/noche
           </span>
         </p>
         <p v-if="chosen.stay_details?.cancellation_deadline" class="mt-1 text-xs text-muted">
@@ -122,7 +128,7 @@ function hours(min: number | null | undefined) {
             <span class="min-w-0 flex-1">
               <span class="block truncate text-sm font-medium">{{ s.name }}</span>
               <span class="block text-xs text-muted">
-                {{ formatMoney(s.price_amount, s.price_currency ?? 'EUR') }}
+                {{ formatWithEur(s.price_amount, s.price_currency, fxRate) }}
                 <template v-if="s.rating"> · {{ s.rating }}</template>
               </span>
             </span>

@@ -53,3 +53,43 @@ export function unconvertedCount(
 ): number {
   return rows.filter((r) => r.amount_eur === null && r.currency !== 'EUR').length
 }
+
+/**
+ * Convierte a euros. `rate` son unidades de la moneda extranjera por 1 EUR
+ * (p. ej. 20652 IDR = 1 EUR). Devuelve null si no se puede convertir, para no
+ * inventar un importe: es preferible enseñar "—" que un número falso.
+ */
+export function toEur(
+  amount: number | null | undefined,
+  currency: string | null | undefined,
+  rate: number | null,
+): number | null {
+  if (amount === null || amount === undefined || Number.isNaN(amount)) return null
+  if (!currency || currency === 'EUR') return amount
+  if (!rate || rate <= 0) return null
+  return Math.round((amount / rate) * 100) / 100
+}
+
+/**
+ * Importe en su moneda y, si no es euros, su equivalente aproximado.
+ * "Rp 7.780.500 · ≈ 376,73 €"
+ */
+export function formatWithEur(
+  amount: number | null | undefined,
+  currency: string | null | undefined,
+  rate: number | null,
+): string {
+  const cur = currency ?? 'EUR'
+  const base = formatMoney(amount, cur)
+  if (cur === 'EUR' || amount === null || amount === undefined) return base
+  const eur = toEur(amount, cur, rate)
+  return eur === null ? base : `${base} · ≈ ${formatMoney(eur, 'EUR')}`
+}
+
+/** Suma en euros convirtiendo lo que haga falta. */
+export function sumInEur(
+  rows: Array<{ amount: number | null; currency: string | null }>,
+  rate: number | null,
+): number {
+  return rows.reduce((acc, r) => acc + (toEur(r.amount, r.currency, rate) ?? 0), 0)
+}
